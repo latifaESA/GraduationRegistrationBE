@@ -27,6 +27,16 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
+app.get('/api/test', async (req, res) => {
+    res.status(200).json({'name': 'Test'});
+})
+
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
 // Email Service Setup
 const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,         // smtp.office365.com
@@ -41,6 +51,13 @@ const transporter = nodemailer.createTransport({
         rejectUnauthorized: false           // Helps with some certificate issues
     }
 });
+
+// Set fixed expiry date: June 23, 2025
+const getTokenExpiryDate = () => {
+    // Create a date for June 23, 2025
+    const expiryDate = new Date(2025, 5, 23, 23, 59, 59); // Month is 0-based, so 5 = June
+    return expiryDate;
+};
 
 // Authentication Middleware
 const authenticate = async (req, res, next) => {
@@ -85,8 +102,7 @@ app.post('/api/registration/level1', async (req, res) => {
 
         // Create a unique token
         const token = crypto.randomBytes(32).toString('hex');
-        const tokenExpiry = new Date();
-        tokenExpiry.setHours(tokenExpiry.getHours() + 48); // Token valid for 48 hours
+        const tokenExpiry = getTokenExpiryDate(); // Set expiry to June 23, 2025
 
         // Update graduate information
         await pool.execute(
@@ -189,8 +205,7 @@ app.post('/api/registration/level2/:token', async (req, res) => {
 
         // Create a new token for level 3
         const newToken = crypto.randomBytes(32).toString('hex');
-        const tokenExpiry = new Date();
-        tokenExpiry.setHours(tokenExpiry.getHours() + 48); // Token valid for 48 hours
+        const tokenExpiry = getTokenExpiryDate(); // Set expiry to June 23, 2025
 
         // Delete any existing attendees
         await pool.execute('DELETE FROM attendees WHERE graduate_id = ?', [graduate.id]);
@@ -632,8 +647,7 @@ app.post('/api/admin/generate-invitations', authenticate, async (req, res) => {
         for (const graduate of graduates) {
             // Create a unique token
             const token = crypto.randomBytes(32).toString('hex');
-            const tokenExpiry = new Date();
-            tokenExpiry.setHours(tokenExpiry.getHours() + 168); // Token valid for 7 days
+            const tokenExpiry = getTokenExpiryDate(); // Set expiry to June 23, 2025
 
             // Check if graduate exists
             const [rows] = await pool.execute(
@@ -750,13 +764,13 @@ app.post('/api/admin/send-invitations', authenticate, async (req, res) => {
 app.post('/api/admin/users', authenticate, async (req, res) => {
     // Check if user is admin
     if (req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Unauthorized' });
+        return res.status(403).json({message: 'Unauthorized'});
     }
 
-    const { username, email, password, role } = req.body;
+    const {username, email, password, role} = req.body;
 
     if (!username || !email || !role) {
-        return res.status(400).json({ message: 'Username, email and role are required' });
+        return res.status(400).json({message: 'Username, email and role are required'});
     }
 
     try {
@@ -775,7 +789,7 @@ app.post('/api/admin/users', authenticate, async (req, res) => {
         if (users.length === 0) {
             // Create new admin
             if (!password) {
-                return res.status(400).json({ message: 'Password is required for new users' });
+                return res.status(400).json({message: 'Password is required for new users'});
             }
 
             await pool.execute(
@@ -783,7 +797,7 @@ app.post('/api/admin/users', authenticate, async (req, res) => {
                 [username, email, hashedPassword, role]
             );
 
-            return res.status(201).json({ message: 'Admin user created successfully' });
+            return res.status(201).json({message: 'Admin user created successfully'});
         } else {
             // Update existing admin
             const updateFields = [];
@@ -808,28 +822,20 @@ app.post('/api/admin/users', authenticate, async (req, res) => {
                 updateValues.push(users[0].id);
 
                 await pool.execute(
-                    `UPDATE administrators SET ${updateFields.join(', ')} WHERE id = ?`,
+                    `UPDATE administrators
+                     SET ${updateFields.join(', ')}
+                     WHERE id = ?`,
                     updateValues
                 );
 
-                return res.status(200).json({ message: 'Admin user updated successfully' });
+                return res.status(200).json({message: 'Admin user updated successfully'});
             }
 
-            return res.status(200).json({ message: 'No changes made' });
+            return res.status(200).json({message: 'No changes made'});
         }
 
     } catch (error) {
         console.error('Admin user error:', error);
-        return res.status(500).json({ message: 'An error occurred while processing admin user' });
+        return res.status(500).json({message: 'An error occurred while processing admin user'});
     }
-});
-
-app.get('/api/test', async (req, res) => {
-    res.status(200).json({'name': 'Test'});
-})
-
-// Start the server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
 });
