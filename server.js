@@ -29,13 +29,17 @@ const pool = mysql.createPool({
 
 // Email Service Setup
 const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: process.env.EMAIL_SECURE === 'true',
+    host: process.env.EMAIL_HOST,         // smtp.office365.com
+    port: process.env.EMAIL_PORT,         // 587
+    secure: false,                        // false for STARTTLS
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
+        user: process.env.EMAIL_USER,       // graduation.registration@esa.edu.lb
+        pass: process.env.EMAIL_PASSWORD,   // Esa@2025
     },
+    tls: {
+        ciphers: 'SSLv3',
+        rejectUnauthorized: false           // Helps with some certificate issues
+    }
 });
 
 // Authentication Middleware
@@ -97,7 +101,7 @@ app.post('/api/registration/level1', async (req, res) => {
         if (isAttending) {
             const registrationLink = `${process.env.FRONTEND_URL}/registration/level2/${token}`;
             console.log(`${registrationLink}`);
-            /*
+
             await transporter.sendMail({
                 from: process.env.EMAIL_FROM,
                 to: email,
@@ -110,7 +114,7 @@ app.post('/api/registration/level1', async (req, res) => {
           <p>This link will expire in 48 hours.</p>
           <p>Best regards,<br>ESA Team</p>
         `,
-            }); */
+            });
         }
 
         return res.status(200).json({
