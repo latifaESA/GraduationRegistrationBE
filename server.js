@@ -105,15 +105,52 @@ app.post('/api/registration/level1', async (req, res) => {
             await transporter.sendMail({
                 from: process.env.EMAIL_FROM,
                 to: email,
-                subject: 'ESA Graduation Ceremony - Attendee Registration',
+                subject: 'ESA Graduation Ceremony - Registration Confirmation',
                 html: `
-          <p>Dear ${firstName} ${lastName},</p>
-          <p>Thank you for confirming your attendance to the graduation ceremony.</p>
-          <p>Please click the link below to register your attendees:</p>
-          <p><a href="${registrationLink}">Register Your Attendees</a></p>
-          <p>This link will expire in 48 hours.</p>
-          <p>Best regards,<br>ESA Team</p>
-        `,
+    <div style="font-family: Arial, sans-serif; color: #662d91; max-width: 800px; margin: 0 auto;">
+        <p style="font-size: 16px;">Dear ${firstName},</p>
+        
+        <p style="font-size: 16px;">Thank you for registering to attend your graduation ceremony – we are excited to celebrate this milestone with you!</p>
+        
+        <p style="font-size: 16px;">Below, you will find the event details, as well as an important request regarding your guests:</p>
+        
+        <hr style="border: 0; height: 1px; background-color: #662d91; margin: 20px 0;">
+        
+        <p style="font-size: 18px; font-weight: bold;">
+            <span style="display: inline-block; vertical-align: middle;">🎓</span> 
+            Graduation Ceremony Details
+        </p>
+        
+        <p style="font-size: 16px;"><strong>Date:</strong> September 19, 2025</p>
+        
+        <p style="font-size: 16px;"><strong>Time:</strong> 6:00 PM | Graduates are requested to arrive at 4:00 PM</p>
+        
+        <p style="font-size: 16px;"><strong>Venue:</strong> Résidence des Pins</p>
+        
+        <hr style="border: 0; height: 1px; background-color: #662d91; margin: 20px 0;">
+        
+        <p style="font-size: 16px;">To ensure smooth access on the day of the event, please click the link below and provide the full names and contact details of the guests who will be accompanying you.</p>
+        
+        <p style="font-size: 16px;">
+            <span style="display: inline-block; vertical-align: middle;">🔗</span>
+            <a href="${registrationLink}" style="color: #662d91;">${registrationLink}</a>
+        </p>
+        
+        <p style="font-size: 16px;"><strong>Please note:</strong></p>
+        
+        <ul style="color: #662d91; font-size: 16px;">
+            <li><strong>Each graduate is allowed two guest cards only.</strong></li>
+            <li>Résidence des Pins has <strong>strict security policies</strong> – the names must match the guests' official IDs.</li>
+            <li>No one will be admitted without proper ID matching the submitted names.</li>
+        </ul>
+        
+        <p style="font-size: 16px;">To avoid any inconvenience, kindly complete this form <strong>by June 23, 2025.</strong></p>
+        
+        <p style="font-size: 16px;">Thank you for your cooperation, and we look forward to celebrating together!</p>
+        
+        <p style="font-size: 16px;">Best regards,<br>ESA team</p>
+    </div>
+    `,
             });
         }
 
@@ -172,32 +209,138 @@ app.post('/api/registration/level2/:token', async (req, res) => {
 
         // Update graduate registration stage
         await pool.execute(
-            `UPDATE graduates 
-       SET registration_stage = 3, registration_token = ?, token_expiry = ?
-       WHERE id = ?`,
+            `UPDATE graduates
+             SET registration_stage = 3, registration_token = ?, token_expiry = ?
+             WHERE id = ?`,
             [newToken, tokenExpiry, graduate.id]
         );
 
-        // Send email with modification link
+        // Set up modification link
         const modificationLink = `${process.env.FRONTEND_URL}/registration/level3/${newToken}`;
         console.log(`${modificationLink}`);
-        /*
+
+        // Common styling for both email templates
+        const commonEmailStyle = `
+            body { 
+                font-family: Arial, sans-serif; 
+                color: #602060; 
+                line-height: 1.5;
+            }
+            .divider {
+                border-top: 1px solid #d0d0d0;
+                margin: 20px 0;
+            }
+            h2 {
+                color: #602060;
+                margin-bottom: 5px;
+            }
+            ul {
+                padding-left: 20px;
+            }
+            li {
+                margin-bottom: 10px;
+            }
+        `;
+
+        // Determine which email template to use based on attendee count
+        let emailSubject = 'ESA Graduation Ceremony - Registration Information';
+        let emailContent = '';
+
+        if (attendeeCount === 0) {
+            // Template for 0 attendees
+            emailContent = `
+            <div style="${commonEmailStyle}">
+                <p>Dear ${graduate.first_name},</p>
+                <p>Thank you for registering to attend your graduation ceremony – we are excited to celebrate this milestone with you!</p>
+                <p>Below, you will find the event details, as well as an important request regarding your guests:</p>
+                
+                <div class="divider"></div>
+                
+                <h2>🎓 Graduation Ceremony Details</h2>
+                <p><strong>Date:</strong> September 19, 2025</p>
+                <p><strong>Time:</strong> 6:00 PM | Graduates are requested to arrive at 4:00 PM</p>
+                <p><strong>Venue:</strong> Résidence des Pins</p>
+                
+                <div class="divider"></div>
+                
+                <p>We noticed that you initially registered with <strong>0 attendees</strong> for the upcoming graduation ceremony. To ensure smooth access on the day of the event, please click the link below and provide the full names and contact details of the guests who will be accompanying you.</p>
+                
+                <p><a href="${modificationLink}" style="color: #602060;">Register Your Guests</a></p>
+                
+                <p>Please note:</p>
+                <ul>
+                    <li>Each graduate is allowed two guest cards only.</li>
+                    <li>Résidence des Pins has <strong>strict security policies</strong> – the names must match the guests' official IDs.</li>
+                    <li>No one will be admitted without proper ID matching the submitted names.</li>
+                </ul>
+                
+                <p>To avoid any inconvenience, kindly complete this form <strong>by June 23, 2025</strong>.</p>
+                
+                <p>Thank you for your cooperation, and we look forward to celebrating together!</p>
+                
+                <p>Best regards,<br>
+                ESA team</p>
+            </div>
+            `;
+        } else {
+            // Template for 1-2 attendees
+            let attendeeListItems = '';
+
+            if (attendees && attendees.length > 0) {
+                for (let i = 0; i < attendees.length; i++) {
+                    attendeeListItems += `<p><strong>Guest ${i+1}:</strong> ${attendees[i].firstName} ${attendees[i].lastName}, Date of Birth: ${attendees[i].dateOfBirth}</p>`;
+                }
+            }
+
+            emailContent = `
+            <div style="${commonEmailStyle}">
+                <p>Dear ${graduate.first_name},</p>
+                <p>Thank you for registering to attend your graduation ceremony – we are excited to celebrate this milestone with you!</p>
+                <p>Below, you will find the event details, as well as information about your registered guests:</p>
+                
+                <div class="divider"></div>
+                
+                <h2>🎓 Graduation Ceremony Details</h2>
+                <p><strong>Date:</strong> September 19, 2025</p>
+                <p><strong>Time:</strong> 6:00 PM | Graduates are requested to arrive at 4:00 PM</p>
+                <p><strong>Venue:</strong> Résidence des Pins</p>
+                
+                <div class="divider"></div>
+                
+                <p>Below is the information you submitted for your guests:</p>
+                ${attendeeListItems}
+                
+                <p>If any of the above details are incorrect or need to be updated, please click the link below to make changes:</p>
+                
+                <p><a href="${modificationLink}" style="color: #602060;">Update Guest Information</a></p>
+                
+                <p>Please note:</p>
+                <ul>
+                    <li>Each graduate is allowed two guest cards only.</li>
+                    <li>Résidence des Pins has <strong>strict security policies</strong> – the names must match the guests' official IDs.</li>
+                    <li>No one will be admitted without proper ID matching the submitted names.</li>
+                </ul>
+                
+                <p>To avoid any inconvenience, kindly complete any updates <strong>by June 23, 2025</strong>.</p>
+                
+                <p>Thank you for your cooperation, and we look forward to celebrating together!</p>
+                
+                <p>Best regards,<br>
+                ESA team</p>
+            </div>
+            `;
+        }
+
+        // Send email with appropriate template
         await transporter.sendMail({
             from: process.env.EMAIL_FROM,
             to: graduate.email,
-            subject: 'ESA Graduation Ceremony - Attendee Modification',
-            html: `
-        <p>Dear ${graduate.first_name} ${graduate.last_name},</p>
-        <p>Thank you for registering your attendees for the graduation ceremony.</p>
-        <p>You can modify your attendees' information using the link below:</p>
-        <p><a href="${modificationLink}">Modify Attendee Information</a></p>
-        <p>This link will be valid until the registration deadline.</p>
-        <p>Best regards,<br>ESA Team</p>
-      `,
-        }); */
+            subject: emailSubject,
+            html: emailContent
+        });
 
         return res.status(200).json({
-            message: 'Attendee registration successful. Please check your email for the modification link.'
+            message: 'Attendee registration successful. Please check your email for the confirmation.'
         });
 
     } catch (error) {
