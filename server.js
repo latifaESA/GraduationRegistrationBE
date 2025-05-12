@@ -80,14 +80,37 @@ const authenticate = async (req, res, next) => {
 // ===== GRADUATE REGISTRATION API ROUTES =====
 
 // Level 1: Initial Graduate Registration
-app.post('/api/registration/level1', async (req, res) => {
+app.post('/api/registration/level1/:token', async (req, res) => {
+    const { token } = req.params;
     const { firstName, lastName, email, promotion, isAttending } = req.body;
 
-    if (!firstName || !lastName || !email || !promotion) {
+    if (!token || !firstName || !lastName || !email || !promotion) {
         return res.status(400).json({ message: 'All fields are required' });
     }
 
     try {
+        // Decode the base64 token to get the encoded email
+        let decodedEmail;
+        try {
+            const decodedBuffer = Buffer.from(token, 'base64');
+            decodedEmail = decodedBuffer.toString('utf-8');
+        } catch (error) {
+            return res.status(400).json({ message: 'Invalid token format' });
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(decodedEmail)) {
+            return res.status(400).json({ message: 'Invalid email format in token' });
+        }
+
+        // Verify that the decoded email matches the email in the request body
+        if (decodedEmail !== email) {
+            return res.status(403).json({
+                message: 'Email verification failed. Please use the link sent to your email.'
+            });
+        }
+
         // Check if email exists in the database
         const [rows] = await pool.execute(
             'SELECT * FROM graduates WHERE email = ?',
@@ -100,22 +123,22 @@ app.post('/api/registration/level1', async (req, res) => {
             });
         }
 
-        // Create a unique token
-        const token = crypto.randomBytes(32).toString('hex');
+        // Create a unique token for the next step
+        const nextToken = crypto.randomBytes(32).toString('hex');
         const tokenExpiry = getTokenExpiryDate(); // Set expiry to June 23, 2025
 
         // Update graduate information
         await pool.execute(
-            `UPDATE graduates 
-       SET first_name = ?, last_name = ?, promotion = ?, is_attending = ?, 
-           registration_stage = 2, registration_token = ?, token_expiry = ?
-       WHERE email = ?`,
-            [firstName, lastName, promotion, isAttending ? 1 : 0, token, tokenExpiry, email]
+            `UPDATE graduates
+             SET first_name = ?, last_name = ?, promotion = ?, is_attending = ?,
+                 registration_stage = 2, registration_token = ?, token_expiry = ?
+             WHERE email = ?`,
+            [firstName, lastName, promotion, isAttending ? 1 : 0, nextToken, tokenExpiry, email]
         );
 
         // Send follow-up email with Level 2 link
         if (isAttending) {
-            const registrationLink = `${process.env.FRONTEND_URL}/registration/level2/${token}`;
+            const registrationLink = `${process.env.FRONTEND_URL}/registration/level2/${nextToken}`;
             console.log(`${registrationLink}`);
 
             await transporter.sendMail({
@@ -180,7 +203,6 @@ app.post('/api/registration/level1', async (req, res) => {
         return res.status(500).json({ message: 'An error occurred during registration' });
     }
 });
-
 // Level 2: Attendee Registration
 app.post('/api/registration/level2/:token', async (req, res) => {
     const { token } = req.params;
@@ -709,10 +731,20 @@ app.post('/api/admin/send-invitations', authenticate, async (req, res) => {
         const results = [];
 
         for (const email of emails) {
+
+            const token = btoa(email);
+            expiryDate = getTokenExpiryDate();
             // Get graduate with token
             const [graduates] = await pool.execute(
-                'SELECT first_name, last_name, registration_token FROM graduates WHERE email = ?',
+                'SELECT first_name, last_name FROM graduates WHERE email = ?',
                 [email]
+            );
+
+            await pool.execute(
+                `UPDATE graduates
+             SET registration_token = ?, token_expiry = ?
+             WHERE email = ?`,
+                [token, expiryDate, email]
             );
 
             if (graduates.length === 0) {
@@ -725,10 +757,10 @@ app.post('/api/admin/send-invitations', authenticate, async (req, res) => {
             }
 
             const graduate = graduates[0];
-            const registrationLink = `${process.env.FRONTEND_URL}/registration/level1/${graduate.registration_token}`;
+            const registrationLink = `${process.env.FRONTEND_URL}/registration/level1/${token}`;
 
             // Send invitation email
-            /*
+
             await transporter.sendMail({
                 from: process.env.EMAIL_FROM,
                 to: email,
@@ -740,7 +772,7 @@ app.post('/api/admin/send-invitations', authenticate, async (req, res) => {
           <p><a href="${registrationLink}">Graduation Registration</a></p>
           <p>Best regards,<br>ESA Team</p>
         `,
-            }); */
+            });
 
             results.push({
                 email,
