@@ -252,6 +252,12 @@ app.post('/api/registration/level2/:token', async (req, res) => {
             [newToken, tokenExpiry, graduate.id]
         );
 
+        await pool.execute(
+            'UPDATE graduates SET registration_complete = TRUE WHERE id = ?',
+            [graduate.id]
+        );
+
+
         // Set up modification link
         const modificationLink = `${process.env.FRONTEND_URL}/registration/level3/${newToken}`;
         console.log(`${modificationLink}`);
