@@ -146,7 +146,7 @@ app.post('/api/registration/level1/:token', async (req, res) => {
                 to: email,
                 subject: 'ESA Graduation Ceremony - Registration Confirmation',
                 html: `
-    <div style="font-family: Arial, sans-serif; color: #662d91; max-width: 800px; margin: 0 auto;">
+    <div style="font-family: Arial, sans-serif; color: #333;">
         <p style="font-size: 16px;">Dear ${firstName},</p>
         
         <p style="font-size: 16px;">Thank you for registering to attend your graduation ceremony – we are excited to celebrate this milestone with you!</p>
@@ -177,7 +177,7 @@ app.post('/api/registration/level1/:token', async (req, res) => {
         
         <p style="font-size: 16px;"><strong>Please note:</strong></p>
         
-        <ul style="color: #662d91; font-size: 16px;">
+        <ul style="font-size: 16px;">
             <li><strong>Each graduate is allowed two guest cards only.</strong></li>
             <li>Résidence des Pins has <strong>strict security policies</strong> – the names must match the guests' official IDs.</li>
             <li>No one will be admitted without proper ID matching the submitted names.</li>
