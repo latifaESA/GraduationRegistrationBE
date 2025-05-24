@@ -162,7 +162,7 @@ app.post('/api/registration/level1/:token', async (req, res) => {
         
         <p style="font-size: 16px;"><strong>Date:</strong> September 19, 2025</p>
         
-        <p style="font-size: 16px;"><strong>Time:</strong> 6:00 PM | Graduates are requested to arrive at 4:00 PM</p>
+        <p style="font-size: 16px;"><strong>Time:</strong> 6:00 PM | Graduates are requested to arrive at 3:00 PM</p>
         
         <p style="font-size: 16px;"><strong>Venue:</strong> Résidence des Pins</p>
         
@@ -178,7 +178,7 @@ app.post('/api/registration/level1/:token', async (req, res) => {
         <p style="font-size: 16px;"><strong>Please note:</strong></p>
         
         <ul style="font-size: 16px;">
-            <li><strong>Each graduate is allowed two guest cards only.</strong></li>
+            <li><strong>Each graduate is allowed two guest only.</strong></li>
             <li>Résidence des Pins has <strong>strict security policies</strong> – the names must match the guests' official IDs.</li>
             <li>No one will be admitted without proper ID matching the submitted names.</li>
         </ul>
@@ -301,7 +301,7 @@ app.post('/api/registration/level2/:token', async (req, res) => {
                 
                 <h2>🎓 Graduation Ceremony Details</h2>
                 <p><strong>Date:</strong> September 19, 2025</p>
-                <p><strong>Time:</strong> 6:00 PM | Graduates are requested to arrive at 4:00 PM</p>
+                <p><strong>Time:</strong> 6:00 PM | Graduates are requested to arrive at 3:00 PM</p>
                 <p><strong>Venue:</strong> Résidence des Pins</p>
                 
                 <div class="divider"></div>
@@ -312,7 +312,7 @@ app.post('/api/registration/level2/:token', async (req, res) => {
                 
                 <p>Please note:</p>
                 <ul>
-                    <li>Each graduate is allowed two guest cards only.</li>
+                    <li>Each graduate is allowed two guest only.</li>
                     <li>Résidence des Pins has <strong>strict security policies</strong> – the names must match the guests' official IDs.</li>
                     <li>No one will be admitted without proper ID matching the submitted names.</li>
                 </ul>
@@ -345,7 +345,7 @@ app.post('/api/registration/level2/:token', async (req, res) => {
                 
                 <h2>🎓 Graduation Ceremony Details</h2>
                 <p><strong>Date:</strong> September 19, 2025</p>
-                <p><strong>Time:</strong> 6:00 PM | Graduates are requested to arrive at 4:00 PM</p>
+                <p><strong>Time:</strong> 6:00 PM | Graduates are requested to arrive at 3:00 PM</p>
                 <p><strong>Venue:</strong> Résidence des Pins</p>
                 
                 <div class="divider"></div>
@@ -359,7 +359,7 @@ app.post('/api/registration/level2/:token', async (req, res) => {
                 
                 <p>Please note:</p>
                 <ul>
-                    <li>Each graduate is allowed two guest cards only.</li>
+                    <li>Each graduate is allowed two guest only.</li>
                     <li>Résidence des Pins has <strong>strict security policies</strong> – the names must match the guests' official IDs.</li>
                     <li>No one will be admitted without proper ID matching the submitted names.</li>
                 </ul>
